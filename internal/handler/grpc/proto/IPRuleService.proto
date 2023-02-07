@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package api;
+
+option go_package = "internal/handler/grpc/pb";
+
+import "google/protobuf/empty.proto";
+
+service IPRule {
+  rpc AddToWhiteList(IPNet) returns(google.protobuf.Empty) {}
+  rpc AddToBlackList(IPNet) returns(google.protobuf.Empty) {}
+  rpc DeleteFromWhiteList(IPNet) returns(google.protobuf.Empty) {}
+  rpc DeleteFromBlackList(IPNet) returns(google.protobuf.Empty) {}
+}
+
+message IPNet {
+  string IPNet = 1;
+}
+

@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package api;
+
+option go_package = "internal/handler/grpc/pb";
+
+import "google/protobuf/empty.proto";
+
+service Permit {
+  rpc CheckQuery(PermitReq) returns(PermitResult) {}
+  rpc ResetIP(RstIPReq) returns(google.protobuf.Empty) {}
+  rpc ResetLogin(RstLoginReq) returns(google.protobuf.Empty) {}
+}
+
+message PermitReq {
+  string Login = 1;
+  string Password = 2;
+  string IP = 3;
+}
+
+message PermitResult {
+  bool Success = 1;
+  string Reason = 2;
+}
+
+message RstIPReq {
+  string IP = 1;
+}
+
+message RstLoginReq {
+  string Login = 1;
+}
