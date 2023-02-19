@@ -14,6 +14,15 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+var (
+	// ruleNames название типа правила для клиента. Неэкспортируемая,
+	//так как используется только в этом пакете.
+	ruleNames = map[model.RuleType]string{
+		model.RuleTypeDeny:  "black-list",
+		model.RuleTypeAllow: "white-list",
+	}
+)
+
 // IPRuleHandlerImpl получение разрешения на заросы, сброс бакетов.
 type IPRuleHandlerImpl struct {
 	pb.UnimplementedIPRuleServer
@@ -42,19 +51,13 @@ func (ir IPRuleHandlerImpl) addToList(
 ) (*emptypb.Empty, error) {
 	ipNet, err := dto.IPNetModel(req)
 	if err != nil {
-		return nil, ir.handleError(fmt.Errorf("неверно заданная сеть: %w", err))
-	}
-	tg := ""
-	if ruleType == model.RuleTypeAllow {
-		tg = "white-list"
-	} else {
-		tg = "black-list"
+		return nil, ir.handleError(fmt.Errorf("specified network is wrong: %w", err))
 	}
 	_, err = ir.services.IPRule.Add(ctx, model.IPRuleInput{IPNet: ipNet, Type: ruleType})
 	if err != nil {
-		return nil, ir.handleError(fmt.Errorf("ошибка добавления сети в %s: %w", tg, err))
+		return nil, ir.handleError(fmt.Errorf("error adding network in %s: %w", ruleNames[ruleType], err))
 	}
-	ir.logger.Info("сеть добавлена в %s", tg)
+	ir.logger.Info("network added successfully in %s", ruleNames[ruleType])
 
 	return &emptypb.Empty{}, nil
 }
@@ -64,13 +67,7 @@ func (ir IPRuleHandlerImpl) removeFromList(
 ) (*emptypb.Empty, error) {
 	ipNet, err := dto.IPNetModel(req)
 	if err != nil {
-		return nil, ir.handleError(fmt.Errorf("неверно заданная сеть: %w", err))
-	}
-	tg := ""
-	if ruleType == model.RuleTypeAllow {
-		tg = "white-list"
-	} else {
-		tg = "black-list"
+		return nil, ir.handleError(fmt.Errorf("specified network is wrong: %w", err))
 	}
 	rule, err := ir.services.IPRule.GetByIPNet(ctx, ruleType, ipNet)
 	if err != nil {
@@ -80,12 +77,12 @@ func (ir IPRuleHandlerImpl) removeFromList(
 	}
 	err = ir.services.IPRule.Delete(ctx, *rule)
 	if err != nil {
-		err := fmt.Errorf("ошибка удаления сети из %s: %w", tg, err)
+		err := fmt.Errorf("error removing network from %s: %w", ruleNames[ruleType], err)
 		ir.logger.Error(err.Error())
 		s := rqres.FromError(err)
 		return nil, status.Error(s.Code(), s.Message())
 	}
-	ir.logger.Info("сеть удалена из %s", tg)
+	ir.logger.Info("network removed successfully from %s", ruleNames[ruleType])
 	return &emptypb.Empty{}, nil
 }
 

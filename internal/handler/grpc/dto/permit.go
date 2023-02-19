@@ -1,7 +1,6 @@
 package dto
 
 import (
-	"errors"
 	"net"
 
 	"github.com/vitermakov/otusgo-final/internal/handler/grpc/pb"
@@ -10,7 +9,7 @@ import (
 
 func PermitModel(req *pb.PermitReq) (model.PermitQuery, error) {
 	if req == nil {
-		return model.PermitQuery{}, errors.New("empty query")
+		return model.PermitQuery{}, ErrRequestEmpty
 	}
 	input := model.PermitQuery{
 		Login:    req.GetLogin(),
@@ -18,23 +17,23 @@ func PermitModel(req *pb.PermitReq) (model.PermitQuery, error) {
 	}
 	ip := net.ParseIP(req.GetIP())
 	if ip == nil {
-		return model.PermitQuery{}, errors.New("ip address is not well-formed")
+		return model.PermitQuery{}, ErrBadIP
 	}
 	input.IP = ip
 
 	return input, nil
 }
 
-func ResetLoginModel(req *pb.RstLoginReq) (model.ResetQuery, error) {
-	return model.ResetQuery{Name: "login", Value: req.GetLogin()}, nil
+func ResetLoginModel(req *pb.RstLoginReq) (model.LimitBucket, error) {
+	return model.LimitBucket{Param: model.LimitParamNameLogin, Value: req.GetLogin()}, nil
 }
 
-func ResetIPModel(req *pb.RstIPReq) (model.ResetQuery, error) {
+func ResetIPModel(req *pb.RstIPReq) (model.LimitBucket, error) {
 	ip := net.ParseIP(req.GetIP())
 	if ip == nil {
-		return model.ResetQuery{}, errors.New("ip address is not well-formed")
+		return model.LimitBucket{}, ErrBadIP
 	}
-	return model.ResetQuery{Name: "ip", Value: ip.String()}, nil
+	return model.LimitBucket{Param: model.LimitParamNameIP, Value: ip.String()}, nil
 }
 
 func FromPermitResultModel(res model.PermitResult) *pb.PermitResult {

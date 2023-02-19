@@ -16,6 +16,11 @@ import (
 	"github.com/vitermakov/otusgo-final/pkg/logger"
 )
 
+const (
+	StoreTypeInMemory = "memory"
+	StoreTypeInPgsql  = "pgsql"
+)
+
 // Repos регистр репозиториев.
 type Repos struct {
 	IPRule repository.IPRule
@@ -23,15 +28,15 @@ type Repos struct {
 
 func NewRepos(store common.Storage, dbPool *sql.DB) (*Repos, error) {
 	var (
-		repos *Repos
+		repos = &Repos{}
 		err   error
 	)
 	switch store.Type {
-	case "memory":
+	case StoreTypeInMemory:
 		repos = &Repos{
 			IPRule: memory.NewIPRuleRepo(),
 		}
-	case "pgsql":
+	case StoreTypeInPgsql:
 		repos = &Repos{
 			IPRule: pgsql.NewIPRuleRepo(dbPool),
 		}

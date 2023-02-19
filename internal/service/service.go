@@ -19,6 +19,6 @@ type IPRule interface {
 // PermitChecker проверка разрешения на совершение действия, основываясь на политике лимитов.
 type PermitChecker interface {
 	Check(context.Context, model.PermitQuery) (model.PermitResult, error)
-	Reset(context.Context, model.ResetQuery) (bool, error)
+	Reset(context.Context, model.LimitBucket) (bool, error)
 	SetBaseDuration(time.Duration)
 }

@@ -25,11 +25,11 @@ type PermitHandlerImpl struct {
 func (p PermitHandlerImpl) CheckQuery(ctx context.Context, req *pb.PermitReq) (*pb.PermitResult, error) {
 	query, err := dto.PermitModel(req)
 	if err != nil {
-		return nil, p.handleError(fmt.Errorf("неверные данные запроса: %w", err))
+		return nil, p.handleError(fmt.Errorf("wrong check-query request: %w", err))
 	}
 	res, err := p.services.PermitChecker.Check(ctx, query)
 	if err != nil {
-		return nil, p.handleError(fmt.Errorf("внутренняя ошибка: %w", err))
+		return nil, p.handleError(fmt.Errorf("internal error: %w", err))
 	}
 	p.logCheckQuery(query, res)
 
@@ -39,7 +39,7 @@ func (p PermitHandlerImpl) CheckQuery(ctx context.Context, req *pb.PermitReq) (*
 func (p PermitHandlerImpl) ResetLogin(ctx context.Context, req *pb.RstLoginReq) (*emptypb.Empty, error) {
 	query, err := dto.ResetLoginModel(req)
 	if err != nil {
-		return nil, p.handleError(fmt.Errorf("неверные данные сброса: %w", err))
+		return nil, p.handleError(fmt.Errorf("wrong reset login request: %w", err))
 	}
 	return p.reset(ctx, query)
 }
@@ -47,17 +47,17 @@ func (p PermitHandlerImpl) ResetLogin(ctx context.Context, req *pb.RstLoginReq) 
 func (p PermitHandlerImpl) ResetIP(ctx context.Context, req *pb.RstIPReq) (*emptypb.Empty, error) {
 	query, err := dto.ResetIPModel(req)
 	if err != nil {
-		return nil, p.handleError(fmt.Errorf("неверные данные сброса: %w", err))
+		return nil, p.handleError(fmt.Errorf("wrong reset ip request:: %w", err))
 	}
 	return p.reset(ctx, query)
 }
 
-func (p PermitHandlerImpl) reset(ctx context.Context, query model.ResetQuery) (*emptypb.Empty, error) {
-	_, err := p.services.PermitChecker.Reset(ctx, query)
+func (p PermitHandlerImpl) reset(ctx context.Context, bucket model.LimitBucket) (*emptypb.Empty, error) {
+	_, err := p.services.PermitChecker.Reset(ctx, bucket)
 	if err != nil {
-		return nil, p.handleError(fmt.Errorf("ошибка сброса %s=%s: %w", query.Name, query.Value, err))
+		return nil, p.handleError(fmt.Errorf("reset error %s=%s: %w", bucket.Param, bucket.Value, err))
 	}
-	p.logger.Info("сброщено %s=%s", query.Name, query.Value)
+	p.logger.Info("limit reset %s", bucket.String())
 
 	return &emptypb.Empty{}, nil
 }

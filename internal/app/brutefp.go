@@ -43,7 +43,7 @@ func (bfp *BruteFP) Initialize(ctx context.Context) error {
 	}
 
 	var dbPool *sql.DB
-	if bfp.config.Storage.Type == "pgsql" {
+	if bfp.config.Storage.Type == deps.StoreTypeInPgsql {
 		pool, closeFn := pgconn.NewPgConn(bfp.config.ServiceID, bfp.config.Storage.PGConn, bfp.logger)
 		if pool == nil {
 			return fmt.Errorf("unable start logger: %w", err)

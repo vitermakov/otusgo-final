@@ -73,16 +73,10 @@ func (ir *IPRuleRepo) matchSearch(rule model.IPRule, search model.IPRuleSearch) 
 		}
 	}
 	if search.IPNet != nil {
-		// если кто-то спросит что это за жесть - линтер считает это более правильным чем вложенные if
-		switch search.IPNetExact {
-		case true:
-			if strings.Compare(rule.IPNet.String(), search.IPNet.String()) != 0 {
-				return false
-			}
-		case false:
-			if !rule.IPNet.Contains(search.IPNet.IP) {
-				return false
-			}
+		if search.IPNetExact && strings.Compare(rule.IPNet.String(), search.IPNet.String()) != 0 {
+			return false
+		} else if !search.IPNetExact && !rule.IPNet.Contains(search.IPNet.IP) {
+			return false
 		}
 	}
 	return true

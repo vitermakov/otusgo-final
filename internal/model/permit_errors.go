@@ -4,11 +4,11 @@ import "errors"
 
 var (
 	ErrDeniedInternal        = errors.New("сервис не работает")
-	ErrDeniedByRule          = errors.New("IP находится в black-list")
-	ErrDeniedByLoginLimit    = errors.New("достигнут предел запросов для логина")
-	ErrDeniedByPasswordLimit = errors.New("достигнут предел запросов для пароля")
-	ErrDeniedByIPLimit       = errors.New("достигнут предел для IP")
-	ErrWrongResetName        = errors.New(`неизвестный параметр сброса бакета. Ожидается 'login' или 'ip'`)
+	ErrDeniedByRule          = errors.New("the IP is in the black-list")
+	ErrDeniedByLoginLimit    = errors.New("the limit of requests has been reached (login)")
+	ErrDeniedByPasswordLimit = errors.New("the limit of requests has been reached (password)")
+	ErrDeniedByIPLimit       = errors.New("the limit of requests has been reached (ip)")
+	ErrWrongResetName        = errors.New(`unknown bucket reset parameter. 'login' или 'ip' expected`)
 )
 
 const (

@@ -15,13 +15,22 @@ type App interface {
 
 // Execute шаблонная функция выполнения приложения.
 func Execute(ctx context.Context, app App) {
+	// здесь создадим собственный контекс для того, чтобы иметь возможность отменить переданный
+	// в app.Initialize и app.Run контекс внутри функции Execute
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	// пропишем defer на закрытие приложения до инициализации.
 	defer app.Close()
 
 	if err := app.Initialize(ctx); err != nil {
-		stdlog.Fatalf("не удалось инициализировать приложение: %s", err)
+		stdlog.Printf("can't initialize application: %s\n", err)
+		cancel()
+		return
 	}
 	if err := app.Run(ctx); err != nil {
-		stdlog.Fatalf("не удалось запустить приложение: %s", err)
+		stdlog.Printf("can't run application: %s\n", err)
+		cancel()
+		return
 	}
 }
