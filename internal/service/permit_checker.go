@@ -25,7 +25,7 @@ type PermitCheckerSrv struct {
 }
 
 func (p PermitCheckerSrv) Check(ctx context.Context, query model.PermitQuery) (model.PermitResult, error) {
-	// сначала проверяем, если ли IP в white/black списках
+	// сначала проверяем, если ли IP в white/black списках.
 	ruleType, err := p.ipRule.GetRuleTypeForIP(ctx, query.IP)
 	if err != nil {
 		return model.PermitResult{Err: model.ErrDeniedInternal, ErrCode: model.ErrDeniedInternalCode}, err
@@ -91,7 +91,7 @@ func (p *PermitCheckerSrv) SetBaseDuration(bd time.Duration) {
 func NewPermitCheckerSrv(
 	ipRule IPRule, limiter ratelimit.RateLimiter, bd time.Duration, cfg config.Limits,
 ) PermitChecker {
-	// проверки на лимиты. Для каждого типа лимита свой ключ
+	// проверки на лимиты. Для каждого типа лимита свой ключ.
 	checks := []struct {
 		name    string
 		limit   int

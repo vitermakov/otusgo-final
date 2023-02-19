@@ -14,14 +14,12 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-var (
-	// ruleNames название типа правила для клиента. Неэкспортируемая,
-	//так как используется только в этом пакете.
-	ruleNames = map[model.RuleType]string{
-		model.RuleTypeDeny:  "black-list",
-		model.RuleTypeAllow: "white-list",
-	}
-)
+// ruleNames название типа правила для клиента. Неэкспортируемая,
+// так как используется только в этом пакете.
+var ruleNames = map[model.RuleType]string{
+	model.RuleTypeDeny:  "black-list",
+	model.RuleTypeAllow: "white-list",
+}
 
 // IPRuleHandlerImpl получение разрешения на заросы, сброс бакетов.
 type IPRuleHandlerImpl struct {
