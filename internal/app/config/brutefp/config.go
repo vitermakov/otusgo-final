@@ -55,6 +55,5 @@ func New(fileName string) (Config, error) {
 		log.Printf("wrong base duration value, set default 1 minute\n")
 		cfg.Limits.BaseDuration = jsonx.NewDuration(1, 'm')
 	}
-	fmt.Println(cfg.Limits.BaseDuration.AsDuration())
 	return cfg, nil
 }
