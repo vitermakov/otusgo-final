@@ -3,6 +3,7 @@ package brutecli
 import (
 	"context"
 	"fmt"
+
 	"github.com/vitermakov/otusgo-final/internal/handler/grpc/pb"
 	"github.com/vitermakov/otusgo-final/internal/model"
 )

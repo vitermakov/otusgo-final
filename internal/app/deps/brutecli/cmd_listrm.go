@@ -2,6 +2,7 @@ package brutecli
 
 import (
 	"context"
+
 	"github.com/vitermakov/otusgo-final/internal/handler/grpc/pb"
 )
 

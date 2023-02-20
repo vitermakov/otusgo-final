@@ -3,13 +3,13 @@ package brutecli
 import (
 	"context"
 	"fmt"
+	"net"
+
 	"github.com/vitermakov/otusgo-final/internal/handler/grpc/pb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"net"
 )
 
-// unexported
 const (
 	typeListWhite = "white"
 	typeListBlack = "black"
@@ -50,15 +50,17 @@ func addOrRemoveExecute(ctx context.Context, client pb.IPRuleClient, args []stri
 	}
 	network := &pb.IPNet{IPNet: nw}
 	if bAdd {
-		if tip == typeListWhite {
+		switch tip {
+		case typeListWhite:
 			_, err = client.AddToWhiteList(ctx, network)
-		} else {
+		case typeListBlack:
 			_, err = client.AddToBlackList(ctx, network)
 		}
 	} else {
-		if tip == typeListWhite {
+		switch tip {
+		case typeListWhite:
 			_, err = client.DeleteFromWhiteList(ctx, network)
-		} else {
+		case typeListBlack:
 			_, err = client.DeleteFromBlackList(ctx, network)
 		}
 	}

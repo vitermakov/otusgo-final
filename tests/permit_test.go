@@ -3,16 +3,17 @@ package tests
 import (
 	"context"
 	"fmt"
+	"net"
+	"strconv"
+	"testing"
+	"time"
+
 	"github.com/stretchr/testify/suite"
 	config "github.com/vitermakov/otusgo-final/internal/app/config/brutefp"
 	"github.com/vitermakov/otusgo-final/internal/handler/grpc/pb"
 	"github.com/vitermakov/otusgo-final/internal/model"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"net"
-	"strconv"
-	"testing"
-	"time"
 )
 
 type PermitSuiteTest struct {
@@ -24,7 +25,7 @@ type PermitSuiteTest struct {
 }
 
 func (ps *PermitSuiteTest) SetupTest() {
-	var configFile = "/app/deployments/configs/brutefp_config.json"
+	configFile := "/app/deployments/configs/brutefp_config.json"
 	var err error
 
 	ps.config, err = config.New(configFile)

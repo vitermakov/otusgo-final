@@ -3,19 +3,19 @@ package tests
 import (
 	"context"
 	"fmt"
-	config "github.com/vitermakov/otusgo-final/internal/app/config/brutefp"
-	"google.golang.org/protobuf/types/known/emptypb"
 	"net"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/suite"
+	config "github.com/vitermakov/otusgo-final/internal/app/config/brutefp"
 	"github.com/vitermakov/otusgo-final/internal/handler/grpc/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type IPRuleSuiteTest struct {
@@ -25,7 +25,7 @@ type IPRuleSuiteTest struct {
 }
 
 func (is *IPRuleSuiteTest) SetupTest() {
-	var configFile = "/app/deployments/configs/brutefp_config.json"
+	configFile := "/app/deployments/configs/brutefp_config.json"
 	cfg, err := config.New(configFile)
 	is.Suite.Require().NoError(err)
 	fmt.Println(cfg)

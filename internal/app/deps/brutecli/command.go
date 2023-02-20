@@ -38,8 +38,7 @@ func InitCommands(commands []Command) (Commands, error) {
 }
 
 func (cs *Commands) Add(cmd Command) error {
-	_, exists := (*cs)[cmd.GetName()]
-	if exists {
+	if _, exists := (*cs)[cmd.GetName()]; exists {
 		return fmt.Errorf("command %s already exists", cmd.GetName())
 	}
 	(*cs)[cmd.GetName()] = cmd

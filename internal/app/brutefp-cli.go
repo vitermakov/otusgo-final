@@ -4,12 +4,12 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/vitermakov/otusgo-final/internal/app/deps/brutecli"
 	"net"
 	"os"
 	"strconv"
 
 	config "github.com/vitermakov/otusgo-final/internal/app/config/brutefp-cli"
+	"github.com/vitermakov/otusgo-final/internal/app/deps/brutecli"
 	"github.com/vitermakov/otusgo-final/internal/handler/grpc/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
