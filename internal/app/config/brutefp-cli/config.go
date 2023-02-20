@@ -9,7 +9,6 @@ import (
 type Config struct {
 	ServiceID   string        `json:"serviceId"`
 	ServiceName string        `json:"serviceName"`
-	Logger      common.Logger `json:"logger"`
 	GrpcClient  common.Server `json:"grpcClient"`
 }
 

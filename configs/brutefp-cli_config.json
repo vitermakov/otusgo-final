@@ -1,12 +1,8 @@
 {
     "serviceId": "brutefp-cli",
     "serviceName": "Brute-force protection CLI interface. Final project",
-    "logger": {
-        "fileName": "./logs/brutefp-cli.log",
-        "level": "info"
-    },
     "grpcClient": {
         "host": "127.0.0.1",
-        "post": 8088
+        "port": 8088
     }
 }
