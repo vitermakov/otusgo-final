@@ -1,6 +1,7 @@
 BIN_BRUTE_FP=./bin/brutefp
 BRUTE_FP_CFG_FILE=./deployments/configs/brutefp_config.json
 BRUTE_FP_CFG_TPL=./deployments/configs/brutefp_config.json.template
+BIN_BRUTE_FP_CLI=./bin/brutefp-cli
 ENV_NAME=tests
 
 GIT_HASH := $(shell git log --format="%h" -n 1)
@@ -34,6 +35,7 @@ integration-test-cleanup: cfg-clean
 
 build:
 	go build -v -o $(BIN_BRUTE_FP) -ldflags "$(LDFLAGS)" ./cmd/brutefp
+	go build -v -o $(BIN_BRUTE_FP_CLI) -ldflags "$(LDFLAGS)" ./cmd/brutefp-cli
 
 run: build
 	$(BIN_BRUTE_FP) -config ./configs/brutefp_config.json

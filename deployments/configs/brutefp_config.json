@@ -1,0 +1,30 @@
+{
+    "serviceId": "brutefp",
+    "serviceName": "Brute-force protection. Final project",
+    "limits": {
+        "method": "fixed_memory",
+        "store": "memory",
+        "loginPerMin": 10,
+        "passwordPerMin": 20,
+        "IPPerMin": 30
+    },
+    "logger": {
+        "fileName": "/var/log/brutefp.log",
+        "level": "info"
+    },
+    "storage": {
+        "type": "pgsql",
+        "pgsql": {
+            "host": "127.0.0.1",
+            "user": "otus_user",
+            "password": "otus_pass",
+            "port": 5432,
+            "dbName": "brutefp"
+        },
+        "memory": {}
+    },
+    "api": {
+        "host": "127.0.0.1",
+        "port": 8088
+    }
+}
