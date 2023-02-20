@@ -77,13 +77,13 @@ func (cli *BruteFPCli) Run(ctx context.Context) error {
 			}
 			result, err := cli.commands.Execute(ctx, args)
 			if err != nil {
-				fmt.Printf("error: %s", err)
+				fmt.Printf("error: %s\n", err)
 				continue
 			}
 			if result.Success {
-				fmt.Printf("OK: %s", result.Message)
+				fmt.Print("OK\n")
 			} else {
-				fmt.Printf("Error: %s", result.Message)
+				fmt.Printf("Error: %s\n", result.Message)
 			}
 		}
 	}()
