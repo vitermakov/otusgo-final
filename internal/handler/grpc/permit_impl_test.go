@@ -97,13 +97,13 @@ func (ps *PermitSuiteTest) TestOutOfLimits() {
 		limit int
 	}{
 		{
-			param: "login",
+			param: model.LimitParamNameLogin,
 			limit: cfg.Limits.LoginPerMin,
 		}, {
-			param: "password",
+			param: model.LimitParamNamePassword,
 			limit: cfg.Limits.PasswordPerMin,
 		}, {
-			param: "ip",
+			param: model.LimitParamNameIP,
 			limit: cfg.Limits.IPPerMin,
 		},
 	}
@@ -121,11 +121,11 @@ func (ps *PermitSuiteTest) TestOutOfLimits() {
 				IP:       fmt.Sprintf("192.168.0.%d", i),
 			}
 			switch limit.param {
-			case "login":
+			case model.LimitParamNameLogin:
 				req.Login = limit.param
-			case "password":
+			case model.LimitParamNamePassword:
 				req.Password = limit.param
-			case "ip":
+			case model.LimitParamNameIP:
 				req.IP = "192.168.1.1"
 			}
 			res, err := ps.pmClient.CheckQuery(ctx, req)
@@ -137,11 +137,11 @@ func (ps *PermitSuiteTest) TestOutOfLimits() {
 				// проверяем не только флаг Success, но им причину
 				ps.Suite.Require().False(res.Success)
 				switch limit.param {
-				case "login":
+				case model.LimitParamNameLogin:
 					ps.Suite.Require().Contains(res.GetReason(), model.ErrDeniedByLoginLimit.Error())
-				case "password":
+				case model.LimitParamNamePassword:
 					ps.Suite.Require().Contains(res.GetReason(), model.ErrDeniedByPasswordLimit.Error())
-				case "ip":
+				case model.LimitParamNameIP:
 					ps.Suite.Require().Contains(res.GetReason(), model.ErrDeniedByIPLimit.Error())
 				}
 			}
@@ -236,8 +236,6 @@ func (ps *PermitSuiteTest) TestAutoReset() {
 	cfg := getCfgAPI(ps.T())
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-
-	ps.services.PermitChecker.SetBaseDuration(time.Second * 2)
 
 	// добираемся до лимита + 1
 	for i := 1; i <= cfg.Limits.LoginPerMin+1; i++ {

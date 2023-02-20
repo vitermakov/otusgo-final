@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"github.com/vitermakov/otusgo-final/pkg/utils/jsonx"
 	"net"
 	"strconv"
 	"testing"
@@ -187,6 +188,7 @@ func getCfgAPI(t *testing.T) config.Config {
 			LoginPerMin:    10,
 			PasswordPerMin: 20,
 			IPPerMin:       30,
+			BaseDuration:   jsonx.NewDuration(2, 's'),
 		},
 		Storage: common.Storage{
 			Type: "memory",

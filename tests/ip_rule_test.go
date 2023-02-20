@@ -2,7 +2,6 @@ package tests
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"strconv"
 	"testing"
@@ -25,10 +24,10 @@ type IPRuleSuiteTest struct {
 }
 
 func (is *IPRuleSuiteTest) SetupTest() {
-	configFile := "/app/deployments/configs/brutefp_config.json"
+	configFile := "../deployments/configs/brutefp_config.json"
 	cfg, err := config.New(configFile)
 	is.Suite.Require().NoError(err)
-	fmt.Println(cfg)
+
 	conn, err := grpc.Dial(
 		net.JoinHostPort(cfg.API.Host, strconv.Itoa(cfg.API.Port)),
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -39,7 +38,10 @@ func (is *IPRuleSuiteTest) SetupTest() {
 }
 
 func (is *IPRuleSuiteTest) TearDownTest() {
-	_ = is.conn.Close()
+	if is.conn != nil {
+		err := is.conn.Close()
+		is.Suite.Require().NoError(err)
+	}
 }
 
 func (is *IPRuleSuiteTest) TestComplex() {
@@ -116,8 +118,8 @@ func (is *IPRuleSuiteTest) TestComplex() {
 			_, err := tc.actionFn(ctx, tc.arg)
 			e, ok := status.FromError(err)
 
-			is.Suite.True(ok, "error is not status")
-			is.Suite.Equal(tc.expectedCode, e.Code())
+			is.Suite.Require().True(ok, "error is not status")
+			is.Suite.Require().Equal(tc.expectedCode, e.Code())
 		})
 	}
 }
