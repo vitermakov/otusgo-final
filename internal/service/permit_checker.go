@@ -12,11 +12,10 @@ import (
 )
 
 type PermitCheckerSrv struct {
-	ipRule       IPRule
-	rateLimiter  ratelimit.Limiter
-	baseDuration time.Duration
-	limits       config.Limits
-	checks       []struct {
+	ipRule      IPRule
+	rateLimiter ratelimit.Limiter
+	limits      config.Limits
+	checks      []struct {
 		name    string
 		limit   int
 		err     error
@@ -42,6 +41,10 @@ func (p PermitCheckerSrv) Check(ctx context.Context, query model.PermitQuery) (m
 		}
 	}
 
+	period, err := p.limits.BaseDuration.AsDuration()
+	if err != nil || period.Nanoseconds() <= 0 {
+		period = time.Minute
+	}
 	var exceed bool
 	for _, check := range p.checks {
 		var checkValue string
@@ -56,7 +59,7 @@ func (p PermitCheckerSrv) Check(ctx context.Context, query model.PermitQuery) (m
 		exceed, err = p.rateLimiter.ExceedLimit(
 			model.LimitBucket{Param: check.name, Value: checkValue}.Name(),
 			ratelimit.Limits{
-				Period: p.baseDuration,
+				Period: period,
 				Limit:  int64(check.limit),
 			},
 		)
@@ -82,10 +85,6 @@ func (p PermitCheckerSrv) Reset(_ context.Context, bucket model.LimitBucket) (bo
 		return false, errx.FatalNew(err)
 	}
 	return found, nil
-}
-
-func (p *PermitCheckerSrv) SetBaseDuration(bd time.Duration) {
-	p.baseDuration = bd
 }
 
 func NewPermitCheckerSrv(
@@ -115,5 +114,5 @@ func NewPermitCheckerSrv(
 			errCode: model.ErrDeniedByIPLimitCode,
 		},
 	}
-	return &PermitCheckerSrv{ipRule: ipRule, rateLimiter: limiter, baseDuration: bd, limits: cfg, checks: checks}
+	return &PermitCheckerSrv{ipRule: ipRule, rateLimiter: limiter, limits: cfg, checks: checks}
 }

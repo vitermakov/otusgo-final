@@ -6,7 +6,8 @@
         "store": "${LIMITS_STORE}",
         "loginPerMin": ${LIMITS_LOGIN_PER_MIN},
         "passwordPerMin": ${LIMITS_PASSWORD_PER_MIN},
-        "IPPerMin": ${LIMITS_IP_PER_MIN}
+        "IPPerMin": ${LIMITS_IP_PER_MIN},
+        "baseDuration": "${LIMITS_BASE_DURATION}"
     },
     "logger": {
         "fileName": "/var/log/brutefp.log",

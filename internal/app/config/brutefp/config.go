@@ -2,9 +2,9 @@ package brutefp
 
 import (
 	"fmt"
-	"log"
-
 	common "github.com/vitermakov/otusgo-final/internal/app/config"
+	"github.com/vitermakov/otusgo-final/pkg/utils/jsonx"
+	"log"
 )
 
 const (
@@ -28,6 +28,8 @@ type Limits struct {
 	LoginPerMin    int    `json:"loginPerMin"`
 	PasswordPerMin int    `json:"passwordPerMin"`
 	IPPerMin       int    `json:"ipPerMin"`
+	// BasePeriod настройка задаваемая только для тестов.
+	BaseDuration jsonx.Duration `json:"baseDuration"`
 }
 
 func New(fileName string) (Config, error) {
@@ -47,5 +49,12 @@ func New(fileName string) (Config, error) {
 		log.Printf("wrong ip per minute limit value, set default '%d'\n", defLimitsIPPerMin)
 		cfg.Limits.IPPerMin = defLimitsIPPerMin
 	}
+	// for tests only
+	baseDur, err := cfg.Limits.BaseDuration.AsDuration()
+	if err != nil || baseDur.Nanoseconds() <= 0 {
+		log.Printf("wrong base duration value, set default 1 minute\n")
+		cfg.Limits.BaseDuration = jsonx.NewDuration(1, 'm')
+	}
+	fmt.Println(cfg.Limits.BaseDuration.AsDuration())
 	return cfg, nil
 }
