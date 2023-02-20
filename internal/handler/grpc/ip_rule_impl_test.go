@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"github.com/vitermakov/otusgo-final/pkg/utils/jsonx"
 	"net"
 	"strconv"
 	"testing"
@@ -15,6 +14,7 @@ import (
 	"github.com/vitermakov/otusgo-final/internal/handler/grpc/pb"
 	"github.com/vitermakov/otusgo-final/pkg/logger"
 	"github.com/vitermakov/otusgo-final/pkg/utils/closer"
+	"github.com/vitermakov/otusgo-final/pkg/utils/jsonx"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"

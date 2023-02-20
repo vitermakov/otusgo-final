@@ -2,8 +2,9 @@ package service
 
 import (
 	"context"
-	"github.com/vitermakov/otusgo-final/internal/model"
 	"net"
+
+	"github.com/vitermakov/otusgo-final/internal/model"
 )
 
 // IPRule управление white/black списками.

@@ -2,9 +2,10 @@ package brutefp
 
 import (
 	"fmt"
+	"log"
+
 	common "github.com/vitermakov/otusgo-final/internal/app/config"
 	"github.com/vitermakov/otusgo-final/pkg/utils/jsonx"
-	"log"
 )
 
 const (

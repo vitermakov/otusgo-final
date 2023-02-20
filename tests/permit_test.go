@@ -25,7 +25,7 @@ type PermitSuiteTest struct {
 }
 
 func (ps *PermitSuiteTest) SetupTest() {
-	configFile := "../deployments/configs/brutefp_config.json"
+	configFile := "/app/deployments/configs/brutefp_config.json"
 	var err error
 
 	ps.config, err = config.New(configFile)
@@ -77,15 +77,15 @@ func (ps *PermitSuiteTest) TestOutOfLimits() {
 		for i := 1; i <= limit.limit*2; i++ {
 			// проверяемому параметру даем одно значение, остальным разные
 			req := &pb.PermitReq{
-				Login:    fmt.Sprintf("login_%d", i),
-				Password: fmt.Sprintf("password_%d", i),
+				Login:    fmt.Sprintf("login_lims_%d", i),
+				Password: fmt.Sprintf("password_lims_%d", i),
 				IP:       fmt.Sprintf("192.168.0.%d", i),
 			}
 			switch limit.param {
 			case model.LimitParamNameLogin:
-				req.Login = limit.param
+				req.Login = "login_lims"
 			case model.LimitParamNamePassword:
-				req.Password = limit.param
+				req.Password = "password_lims"
 			case model.LimitParamNameIP:
 				req.IP = "192.168.1.1"
 			}
@@ -96,7 +96,7 @@ func (ps *PermitSuiteTest) TestOutOfLimits() {
 				ps.Suite.Require().True(res.Success, "%s limit is %d: got %d", limit.param, limit.limit, i)
 			} else {
 				// проверяем не только флаг Success, но им причину
-				ps.Suite.Require().False(res.Success)
+				ps.Suite.Require().False(res.Success, "%s limit is %d: got %d", limit.param, limit.limit, i)
 				switch limit.param {
 				case model.LimitParamNameLogin:
 					ps.Suite.Require().Contains(res.GetReason(), model.ErrDeniedByLoginLimit.Error())
@@ -119,8 +119,8 @@ func (ps *PermitSuiteTest) TestBlackList() {
 	ps.Suite.Require().NoError(err)
 
 	req := &pb.PermitReq{
-		Login:    "login",
-		Password: "password",
+		Login:    "login_wl",
+		Password: "password_wl",
 		IP:       "192.168.3.100",
 	}
 	res, err := ps.pmClient.CheckQuery(ctx, req)
@@ -144,9 +144,9 @@ func (ps *PermitSuiteTest) TestWhiteList() {
 
 	for i := 1; i <= 2*cfg.Limits.LoginPerMin; i++ {
 		req := &pb.PermitReq{
-			Login:    "login",
-			Password: fmt.Sprintf("password_%d", i),
-			IP:       "192.168.4.100",
+			Login:    "login_bl",
+			Password: fmt.Sprintf("password_bl_%d", i),
+			IP:       fmt.Sprintf("192.168.4.%d", i),
 		}
 		res, err := ps.pmClient.CheckQuery(ctx, req)
 		ps.Suite.Require().NoError(err)
@@ -166,8 +166,8 @@ func (ps *PermitSuiteTest) TestBucketReset() {
 	// добираемся до лимита
 	for i := 1; i <= cfg.Limits.LoginPerMin; i++ {
 		req := &pb.PermitReq{
-			Login:    "login",
-			Password: fmt.Sprintf("password_%d", i),
+			Login:    "login_rs",
+			Password: fmt.Sprintf("password_rs_%d", i),
 			IP:       fmt.Sprintf("192.168.5.%d", i),
 		}
 		res, err := ps.pmClient.CheckQuery(ctx, req)
@@ -176,14 +176,14 @@ func (ps *PermitSuiteTest) TestBucketReset() {
 	}
 
 	// сбрасываем бакет с логином
-	_, err := ps.pmClient.ResetLogin(ctx, &pb.RstLoginReq{Login: "login"})
+	_, err := ps.pmClient.ResetLogin(ctx, &pb.RstLoginReq{Login: "login_rs"})
 	ps.Suite.Require().NoError(err)
 
 	// убеждаемся что следующие запросы разрешены
 	for i := 1; i <= cfg.Limits.LoginPerMin; i++ {
 		req := &pb.PermitReq{
-			Login:    "login",
-			Password: fmt.Sprintf("password_%d", i),
+			Login:    "login_rs",
+			Password: fmt.Sprintf("password_rs_%d", i),
 			IP:       fmt.Sprintf("192.168.5.%d", i),
 		}
 		res, err := ps.pmClient.CheckQuery(ctx, req)
@@ -201,9 +201,9 @@ func (ps *PermitSuiteTest) TestAutoReset() {
 	// добираемся до лимита + 1
 	for i := 1; i <= cfg.Limits.LoginPerMin+1; i++ {
 		req := &pb.PermitReq{
-			Login:    "login",
-			Password: fmt.Sprintf("password_%d", i),
-			IP:       fmt.Sprintf("192.168.5.%d", i),
+			Login:    "login_ar",
+			Password: fmt.Sprintf("password_ar_%d", i),
+			IP:       fmt.Sprintf("192.168.6.%d", i),
 		}
 		res, err := ps.pmClient.CheckQuery(ctx, req)
 		ps.Suite.Require().NoError(err)
@@ -218,9 +218,9 @@ func (ps *PermitSuiteTest) TestAutoReset() {
 
 	// запросы опять проходят
 	req := &pb.PermitReq{
-		Login:    "login",
-		Password: "password_1",
-		IP:       "192.168.5.1",
+		Login:    "login_ar",
+		Password: "password_ar_1",
+		IP:       "192.168.6.1",
 	}
 	res, err := ps.pmClient.CheckQuery(ctx, req)
 	ps.Suite.Require().NoError(err)

@@ -24,7 +24,7 @@ type IPRuleSuiteTest struct {
 }
 
 func (is *IPRuleSuiteTest) SetupTest() {
-	configFile := "../deployments/configs/brutefp_config.json"
+	configFile := "/app/deployments/configs/brutefp_config.json"
 	cfg, err := config.New(configFile)
 	is.Suite.Require().NoError(err)
 
