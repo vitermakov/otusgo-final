@@ -8,7 +8,6 @@ import (
 )
 
 type App interface {
-	Initialize(ctx context.Context) error
 	Run(ctx context.Context) error
 	Close()
 }
@@ -23,11 +22,6 @@ func Execute(ctx context.Context, app App) {
 	// пропишем defer на закрытие приложения до инициализации.
 	defer app.Close()
 
-	if err := app.Initialize(ctx); err != nil {
-		stdlog.Printf("can't initialize application: %s\n", err)
-		cancel()
-		return
-	}
 	if err := app.Run(ctx); err != nil {
 		stdlog.Printf("can't run application: %s\n", err)
 		cancel()

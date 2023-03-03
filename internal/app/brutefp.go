@@ -25,31 +25,28 @@ type BruteFP struct {
 	closer   *closer.Closer
 }
 
-func NewBruteFP(config config.Config) App {
-	return &BruteFP{config: config, closer: closer.NewCloser()}
-}
-
-func (bfp *BruteFP) Initialize(ctx context.Context) error {
-	logLevel, err := logger.ParseLevel(bfp.config.Logger.Level)
+func NewBruteFP(ctx context.Context, config config.Config) (App, error) {
+	logLevel, err := logger.ParseLevel(config.Logger.Level)
 	if err != nil {
-		return fmt.Errorf("'%s': %w", bfp.config.Logger.Level, err)
+		return nil, fmt.Errorf("'%s': %w", config.Logger.Level, err)
 	}
-	bfp.logger, err = logger.NewLogrus(logger.Config{
+	logs, err := logger.NewLogrus(logger.Config{
 		Level:    logLevel,
-		FileName: bfp.config.Logger.FileName,
+		FileName: config.Logger.FileName,
 	})
 	if err != nil {
-		return fmt.Errorf("unable start logger: %w", err)
+		return nil, fmt.Errorf("unable start logger: %w", err)
 	}
 
+	closes := closer.NewCloser()
 	var dbPool *sql.DB
-	if bfp.config.Storage.Type == deps.StoreTypeInPgsql {
-		pool, closeFn := pgconn.NewPgConn(bfp.config.ServiceID, bfp.config.Storage.PGConn, bfp.logger)
+	if config.Storage.Type == deps.StoreTypeInPgsql {
+		pool, closeFn := pgconn.NewPgConn(config.ServiceID, config.Storage.PGConn, logs)
 		if pool == nil {
-			return fmt.Errorf("unable start logger: %w", err)
+			return nil, fmt.Errorf("unable start logger: %w", err)
 		}
 		dbPool = pool
-		bfp.closer.Register("DB", closeFn)
+		closes.Register("DB", closeFn)
 
 		// устанавливаем диалект билдера запросов
 		sqlf.SetDialect(sqlf.PostgreSQL)
@@ -66,25 +63,31 @@ func (bfp *BruteFP) Initialize(ctx context.Context) error {
 			}
 		}()
 	}
-	rateLimiter, closeFn, err := ratelimit.NewRateLimiter(bfp.config.Limits)
-	bfp.closer.Register("Rate Limiter", closeFn)
+	rateLimiter, closeFn, err := ratelimit.NewRateLimiter(config.Limits)
+	closes.Register("Rate Limiter", closeFn)
 	if err != nil {
-		return fmt.Errorf("error init rate limiter: %w", err)
+		return nil, fmt.Errorf("error init rate limiter: %w", err)
 	}
-	repos, err := deps.NewRepos(bfp.config.Storage, dbPool)
+	repos, err := deps.NewRepos(config.Storage, dbPool)
 	if err != nil {
-		return fmt.Errorf("error init data layer %w", err)
+		return nil, fmt.Errorf("error init data layer %w", err)
 	}
-	bfp.deps = &deps.Deps{
+	dependencies := &deps.Deps{
 		Repos:       repos,
-		Logger:      bfp.logger,
+		Logger:      logs,
 		RateLimiter: rateLimiter,
 		Clock:       clock.New(),
 	}
 
-	bfp.services = deps.NewServices(bfp.deps, bfp.config)
+	services := deps.NewServices(dependencies, config)
 
-	return nil
+	return &BruteFP{
+		config:   config,
+		closer:   closes,
+		services: services,
+		deps:     dependencies,
+		logger:   logs,
+	}, nil
 }
 
 func (bfp *BruteFP) Run(ctx context.Context) error {

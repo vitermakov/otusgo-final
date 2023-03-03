@@ -31,5 +31,11 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 
-	app.Execute(ctx, app.NewBruteFPCli(cfg))
+	appCli, err := app.NewBruteFPCli(ctx, cfg)
+	if err != nil {
+		log.Printf("can't initialize application: %s\n", err)
+		cancel()
+		return
+	}
+	app.Execute(ctx, appCli)
 }
