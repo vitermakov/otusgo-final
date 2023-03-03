@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"net"
-	"time"
 
 	"github.com/vitermakov/otusgo-final/internal/model"
 )
@@ -20,5 +19,4 @@ type IPRule interface {
 type PermitChecker interface {
 	Check(context.Context, model.PermitQuery) (model.PermitResult, error)
 	Reset(context.Context, model.LimitBucket) (bool, error)
-	SetBaseDuration(time.Duration)
 }

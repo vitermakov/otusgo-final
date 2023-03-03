@@ -28,7 +28,7 @@ type Repos struct {
 
 func NewRepos(store common.Storage, dbPool *sql.DB) (*Repos, error) {
 	var (
-		repos = &Repos{}
+		repos *Repos
 		err   error
 	)
 	switch store.Type {
@@ -43,7 +43,10 @@ func NewRepos(store common.Storage, dbPool *sql.DB) (*Repos, error) {
 	default:
 		err = fmt.Errorf("unknown storage type '%s", store.Type)
 	}
-	return repos, err
+	if err != nil {
+		return nil, err
+	}
+	return repos, nil
 }
 
 // Deps зависимости.

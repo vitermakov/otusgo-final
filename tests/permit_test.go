@@ -1,97 +1,58 @@
-package grpc
+package tests
 
 import (
 	"context"
 	"fmt"
+	"net"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/suite"
-	deps "github.com/vitermakov/otusgo-final/internal/app/deps/brutefp"
+	config "github.com/vitermakov/otusgo-final/internal/app/config/brutefp"
 	"github.com/vitermakov/otusgo-final/internal/handler/grpc/pb"
 	"github.com/vitermakov/otusgo-final/internal/model"
-	"github.com/vitermakov/otusgo-final/internal/ratelimit"
-	"github.com/vitermakov/otusgo-final/pkg/logger"
-	"github.com/vitermakov/otusgo-final/pkg/utils/closer"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type PermitSuiteTest struct {
 	suite.Suite
-	closer   *closer.Closer
-	irConn   *grpc.ClientConn
-	pmConn   *grpc.ClientConn
+	config   config.Config
+	conn     *grpc.ClientConn
 	irClient pb.IPRuleClient
 	pmClient pb.PermitClient
-	logger   logger.Logger
-	services *deps.Services
 }
 
 func (ps *PermitSuiteTest) SetupTest() {
+	configFile := "/app/deployments/configs/brutefp_config.json"
 	var err error
-	cfg := getCfgAPI(ps.T())
 
-	logLevel, err := logger.ParseLevel(cfg.Logger.Level)
+	ps.config, err = config.New(configFile)
 	ps.Suite.Require().NoError(err)
 
-	log, err := logger.NewLogrus(logger.Config{
-		Level:    logLevel,
-		FileName: cfg.Logger.FileName,
-	})
-	ps.Suite.Require().NoError(err)
-	ps.logger = log
-
-	ps.closer = closer.NewCloser()
-
-	// dbPool, closeFn := pgconn.NewPgConn(cfg.ServiceID, cfg.PgStore, log)
-	// ps.Suite.Require().NotNil(dbPool)
-	// ps.closer.Register("DB", closeFn)
-	// sqlf.SetDialect(sqlf.PostgreSQL)
-
-	rateLimiter, closeFn, err := ratelimit.NewRateLimiter(cfg.Limits)
-	ps.Suite.Require().NoError(err)
-	ps.closer.Register("Rate Limiter", closeFn)
-
-	repos, err := deps.NewRepos(cfg.Storage, nil)
+	conn, err := grpc.Dial(
+		net.JoinHostPort(ps.config.API.Host, strconv.Itoa(ps.config.API.Port)),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	ps.Suite.Require().NoError(err)
 
-	depends := &deps.Deps{
-		Repos:       repos,
-		Logger:      log,
-		RateLimiter: rateLimiter,
-	}
-
-	ps.services = deps.NewServices(depends, cfg)
-
-	grpcServer, closeFn := NewHandledServer(cfg.API, ps.services, depends)
-	ps.closer.Register("GRPC Server", closeFn)
-
-	go func() {
-		err := grpcServer.Start()
-		ps.Suite.Require().NoError(err)
-	}()
-
-	ps.irConn, err = getConn(ps.T(), cfg.API)
-	ps.Suite.Require().NoError(err)
-	ps.pmConn, err = getConn(ps.T(), cfg.API)
-	ps.Suite.Require().NoError(err)
-	ps.irClient = pb.NewIPRuleClient(ps.irConn)
-	ps.pmClient = pb.NewPermitClient(ps.pmConn)
+	ps.irClient = pb.NewIPRuleClient(conn)
+	ps.pmClient = pb.NewPermitClient(conn)
+	ps.conn = conn
 }
 
 func (ps *PermitSuiteTest) TearDownTest() {
-	_ = ps.irConn.Close()
-	_ = ps.pmConn.Close()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	ps.closer.Close(ctx, ps.logger)
+	if ps.conn != nil {
+		err := ps.conn.Close()
+		ps.Suite.Require().NoError(err)
+	}
 }
 
 // TestOutOfLimits тестируем не только ограничение по количеству запросов по каждому
 // отдельному login/password/ip, но и то, что разные типы ограничений работают раздельно
 // друг от друга. Дальнейшие тесты будут выполняться на проверке одного параметра (например, login).
 func (ps *PermitSuiteTest) TestOutOfLimits() {
-	cfg := getCfgAPI(ps.T())
+	cfg := ps.config
 	limits := []struct {
 		param string
 		limit int
@@ -116,15 +77,15 @@ func (ps *PermitSuiteTest) TestOutOfLimits() {
 		for i := 1; i <= limit.limit*2; i++ {
 			// проверяемому параметру даем одно значение, остальным разные
 			req := &pb.PermitReq{
-				Login:    fmt.Sprintf("login_%d", i),
-				Password: fmt.Sprintf("password_%d", i),
+				Login:    fmt.Sprintf("login_lims_%d", i),
+				Password: fmt.Sprintf("password_lims_%d", i),
 				IP:       fmt.Sprintf("192.168.0.%d", i),
 			}
 			switch limit.param {
 			case model.LimitParamNameLogin:
-				req.Login = limit.param
+				req.Login = "login_lims"
 			case model.LimitParamNamePassword:
-				req.Password = limit.param
+				req.Password = "password_lims"
 			case model.LimitParamNameIP:
 				req.IP = "192.168.1.1"
 			}
@@ -135,7 +96,7 @@ func (ps *PermitSuiteTest) TestOutOfLimits() {
 				ps.Suite.Require().True(res.Success, "%s limit is %d: got %d", limit.param, limit.limit, i)
 			} else {
 				// проверяем не только флаг Success, но им причину
-				ps.Suite.Require().False(res.Success)
+				ps.Suite.Require().False(res.Success, "%s limit is %d: got %d", limit.param, limit.limit, i)
 				switch limit.param {
 				case model.LimitParamNameLogin:
 					ps.Suite.Require().Contains(res.GetReason(), model.ErrDeniedByLoginLimit.Error())
@@ -158,8 +119,8 @@ func (ps *PermitSuiteTest) TestBlackList() {
 	ps.Suite.Require().NoError(err)
 
 	req := &pb.PermitReq{
-		Login:    "login",
-		Password: "password",
+		Login:    "login_wl",
+		Password: "password_wl",
 		IP:       "192.168.3.100",
 	}
 	res, err := ps.pmClient.CheckQuery(ctx, req)
@@ -174,7 +135,7 @@ func (ps *PermitSuiteTest) TestBlackList() {
 
 // TestWhiteList если добавить IP в white-list, то ограничение по кол-ву запросов не действует.
 func (ps *PermitSuiteTest) TestWhiteList() {
-	cfg := getCfgAPI(ps.T())
+	cfg := ps.config
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
@@ -183,9 +144,9 @@ func (ps *PermitSuiteTest) TestWhiteList() {
 
 	for i := 1; i <= 2*cfg.Limits.LoginPerMin; i++ {
 		req := &pb.PermitReq{
-			Login:    "login",
-			Password: fmt.Sprintf("password_%d", i),
-			IP:       "192.168.4.100",
+			Login:    "login_bl",
+			Password: fmt.Sprintf("password_bl_%d", i),
+			IP:       fmt.Sprintf("192.168.4.%d", i),
 		}
 		res, err := ps.pmClient.CheckQuery(ctx, req)
 		ps.Suite.Require().NoError(err)
@@ -198,15 +159,15 @@ func (ps *PermitSuiteTest) TestWhiteList() {
 
 // TestBucketReset проверяем сброс бакета (по логину).
 func (ps *PermitSuiteTest) TestBucketReset() {
-	cfg := getCfgAPI(ps.T())
+	cfg := ps.config
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	// добираемся до лимита
 	for i := 1; i <= cfg.Limits.LoginPerMin; i++ {
 		req := &pb.PermitReq{
-			Login:    "login",
-			Password: fmt.Sprintf("password_%d", i),
+			Login:    "login_rs",
+			Password: fmt.Sprintf("password_rs_%d", i),
 			IP:       fmt.Sprintf("192.168.5.%d", i),
 		}
 		res, err := ps.pmClient.CheckQuery(ctx, req)
@@ -215,14 +176,14 @@ func (ps *PermitSuiteTest) TestBucketReset() {
 	}
 
 	// сбрасываем бакет с логином
-	_, err := ps.pmClient.ResetLogin(ctx, &pb.RstLoginReq{Login: "login"})
+	_, err := ps.pmClient.ResetLogin(ctx, &pb.RstLoginReq{Login: "login_rs"})
 	ps.Suite.Require().NoError(err)
 
 	// убеждаемся что следующие запросы разрешены
 	for i := 1; i <= cfg.Limits.LoginPerMin; i++ {
 		req := &pb.PermitReq{
-			Login:    "login",
-			Password: fmt.Sprintf("password_%d", i),
+			Login:    "login_rs",
+			Password: fmt.Sprintf("password_rs_%d", i),
 			IP:       fmt.Sprintf("192.168.5.%d", i),
 		}
 		res, err := ps.pmClient.CheckQuery(ctx, req)
@@ -233,16 +194,16 @@ func (ps *PermitSuiteTest) TestBucketReset() {
 
 // TestAutoReset убеждаемся, что ограничение работает не вечно, а только в рамках периода.
 func (ps *PermitSuiteTest) TestAutoReset() {
-	cfg := getCfgAPI(ps.T())
+	cfg := ps.config
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	// добираемся до лимита + 1
 	for i := 1; i <= cfg.Limits.LoginPerMin+1; i++ {
 		req := &pb.PermitReq{
-			Login:    "login",
-			Password: fmt.Sprintf("password_%d", i),
-			IP:       fmt.Sprintf("192.168.5.%d", i),
+			Login:    "login_ar",
+			Password: fmt.Sprintf("password_ar_%d", i),
+			IP:       fmt.Sprintf("192.168.6.%d", i),
 		}
 		res, err := ps.pmClient.CheckQuery(ctx, req)
 		ps.Suite.Require().NoError(err)
@@ -257,9 +218,9 @@ func (ps *PermitSuiteTest) TestAutoReset() {
 
 	// запросы опять проходят
 	req := &pb.PermitReq{
-		Login:    "login",
-		Password: "password_1",
-		IP:       "192.168.5.1",
+		Login:    "login_ar",
+		Password: "password_ar_1",
+		IP:       "192.168.6.1",
 	}
 	res, err := ps.pmClient.CheckQuery(ctx, req)
 	ps.Suite.Require().NoError(err)

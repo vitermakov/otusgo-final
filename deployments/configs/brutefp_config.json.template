@@ -1,0 +1,31 @@
+{
+    "serviceId": "brutefp",
+    "serviceName": "Brute-force protection. Final project",
+    "limits": {
+        "method": "${LIMITS_METHOD}",
+        "store": "${LIMITS_STORE}",
+        "loginPerMin": ${LIMITS_LOGIN_PER_MIN},
+        "passwordPerMin": ${LIMITS_PASSWORD_PER_MIN},
+        "IPPerMin": ${LIMITS_IP_PER_MIN},
+        "baseDuration": "${LIMITS_BASE_DURATION}"
+    },
+    "logger": {
+        "fileName": "/var/log/brutefp.log",
+        "level": "${LOGGER_LEVEL}"
+    },
+    "storage": {
+        "type": "pgsql",
+        "pgsql": {
+            "host": "${POSTGRES_HOST}",
+            "user": "${POSTGRES_USER}",
+            "password": "${POSTGRES_PASSWORD}",
+            "port": ${POSTGRES_PORT},
+            "dbName": "${POSTGRES_DBNAME}"
+        },
+        "memory": {}
+    },
+    "api": {
+        "host": "${SERVER_GRPC_HOST}",
+        "port": ${SERVER_GRPC_PORT}
+    }
+}

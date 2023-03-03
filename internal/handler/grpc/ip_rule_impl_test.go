@@ -14,6 +14,7 @@ import (
 	"github.com/vitermakov/otusgo-final/internal/handler/grpc/pb"
 	"github.com/vitermakov/otusgo-final/pkg/logger"
 	"github.com/vitermakov/otusgo-final/pkg/utils/closer"
+	"github.com/vitermakov/otusgo-final/pkg/utils/jsonx"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -187,6 +188,7 @@ func getCfgAPI(t *testing.T) config.Config {
 			LoginPerMin:    10,
 			PasswordPerMin: 20,
 			IPPerMin:       30,
+			BaseDuration:   jsonx.NewDuration(2, 's'),
 		},
 		Storage: common.Storage{
 			Type: "memory",

@@ -55,9 +55,10 @@ func TestLoggerLevel(t *testing.T) {
 func TestLogrusAdapter(t *testing.T) {
 	file, err := os.CreateTemp("", "log.")
 	require.NoError(t, err)
-	defer file.Close()
-	defer os.Remove(file.Name())
-
+	defer func() {
+		file.Close()
+		os.Remove(file.Name())
+	}()
 	t.Run("wrong level", func(t *testing.T) {
 		_, err := NewLogrus(Config{
 			Level:     555,
