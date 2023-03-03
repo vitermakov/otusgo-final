@@ -1,0 +1,43 @@
+version: "3.5"
+
+services:
+  postgres:
+    image: postgres:alpine
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    expose:
+      - ${POSTGRES_PORT}
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DBNAME}
+    network_mode: host
+  migrate:
+    build:
+      context: ..
+      dockerfile: ./deployments/migrations/Dockerfile
+    environment:
+      WAIT_HOSTS: ${POSTGRES_HOST}:${POSTGRES_PORT}
+      GOOSE_DRIVER: "postgres"
+      GOOSE_DBSTRING: "host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DBNAME} sslmode=disable"
+    depends_on:
+      - postgres
+    network_mode: host
+  brutefp:
+    build:
+      context: ..
+      dockerfile: ./deployments/brutefp/Dockerfile
+      args:
+        - CONFIG_FILE=./deployments/configs/brutefp_config.json
+    environment:
+      WAIT_HOSTS: ${POSTGRES_HOST}:${POSTGRES_PORT}
+    volumes:
+      - ../logs:/var/log
+    restart: on-failure
+    depends_on:
+      - postgres
+    ports:
+      - "${SERVER_GRPC_PORT}:${SERVER_GRPC_PORT}"
+    expose:
+      - ${SERVER_GRPC_PORT}
+    network_mode: host

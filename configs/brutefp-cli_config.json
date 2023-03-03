@@ -1,0 +1,8 @@
+{
+    "serviceId": "brutefp-cli",
+    "serviceName": "Brute-force protection CLI interface. Final project",
+    "grpcClient": {
+        "host": "127.0.0.1",
+        "port": 8088
+    }
+}
