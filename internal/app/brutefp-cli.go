@@ -23,33 +23,33 @@ type BruteFPCli struct {
 	pmClient pb.PermitClient
 }
 
-func NewBruteFPCli(config config.Config) App {
-	return &BruteFPCli{config: config}
-}
-
-func (cli *BruteFPCli) Initialize(ctx context.Context) error {
-	cliCfg := cli.config.GrpcClient
+func NewBruteFPCli(ctx context.Context, config config.Config) (App, error) {
+	cliCfg := config.GrpcClient
 	conn, err := grpc.DialContext(ctx,
 		net.JoinHostPort(cliCfg.Host, strconv.Itoa(cliCfg.Port)),
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return fmt.Errorf("can't connect to grpc server on %s:%d: %w", cliCfg.Host, cliCfg.Port, err)
+		return nil, fmt.Errorf("can't connect to grpc server on %s:%d: %w", cliCfg.Host, cliCfg.Port, err)
 	}
 
-	cli.irClient = pb.NewIPRuleClient(conn)
-	cli.pmClient = pb.NewPermitClient(conn)
-	cli.conn = conn
+	irClient := pb.NewIPRuleClient(conn)
+	pmClient := pb.NewPermitClient(conn)
 
-	cli.commands, err = brutecli.InitCommands([]brutecli.Command{
-		brutecli.NewListAdd(cli.irClient),
-		brutecli.NewListRm(cli.irClient),
-		brutecli.NewReset(cli.pmClient),
+	commands, err := brutecli.InitCommands([]brutecli.Command{
+		brutecli.NewListAdd(irClient),
+		brutecli.NewListRm(irClient),
+		brutecli.NewReset(pmClient),
 	})
 	if err != nil {
-		return fmt.Errorf("can't init commands: %w", err)
+		return nil, fmt.Errorf("can't init commands: %w", err)
 	}
-
-	return nil
+	return &BruteFPCli{
+		config:   config,
+		conn:     conn,
+		irClient: irClient,
+		pmClient: pmClient,
+		commands: commands,
+	}, nil
 }
 
 func (cli *BruteFPCli) Run(ctx context.Context) error {
